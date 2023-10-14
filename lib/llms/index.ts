@@ -170,6 +170,42 @@ export class LargeLanguageModels extends Construct {
       });
     }
 
+    if (
+      props.config.llms.sagemaker.includes(
+        SupportedSageMakerLLM.CodeLLama_13B_Instruct
+      )
+    ) {
+      const codellama = new SageMakerModel(this, "CodeLLama_13B_Instruct", {
+        vpc: props.shared.vpc,
+        region: cdk.Aws.REGION,
+        model: {
+          type: DeploymentType.ModelPackage,
+          modelId: "meta-textgeneration-llama-codellama-13b-instruct",
+          instanceType: "ml.g5.12xlarge",
+          packages: (scope) =>
+            new cdk.CfnMapping(scope, "CodeLlamaPackageMapping", {
+              lazy: true,
+              mapping: {
+                "eu-west-1": {
+                  arn: "arn:aws:sagemaker:eu-west-1:985815980388:model-package/llama2-13b-f-v4-55c7c39a0cf535e8bad0d342598c219b",
+                },
+                "us-east-1": {
+                  arn: "arn:aws:sagemaker:us-east-1:865070037744:model-package/llama2-13b-f-v4-55c7c39a0cf535e8bad0d342598c219b",
+                },
+                "us-west-2": {
+                  arn: "arn:aws:sagemaker:us-west-2:594846645681:model-package/llama2-13b-f-v4-55c7c39a0cf535e8bad0d342598c219b",
+                },
+              },
+            }),
+        },
+      });
+
+      llms.push({
+        name: "llama-CodeLLama-13b-Instruct",
+        endpoint: codellama.endpoint,
+      });
+    }
+    
     const llmsParameter = new ssm.StringParameter(this, "LLMsParameter", {
       stringValue: JSON.stringify(
         llms.map((model) => ({
